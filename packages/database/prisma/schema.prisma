@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+enum ActionItemStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum ActionItemPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  MENTION
+  INVITATION
+  GOAL_ASSIGNED
+  ACTION_ITEM_ASSIGNED
+  ANNOUNCEMENT
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password          String
+  firstName         String
+  lastName          String
+  avatarUrl         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  refreshTokens     RefreshToken[]
+  workspaceMemberships WorkspaceMember[]
+  createdWorkspaces Workspace[] @relation("WorkspaceCreator")
+  ownedGoals        Goal[] @relation("GoalOwner")
+  assignedActionItems ActionItem[]
+  comments          Comment[]
+  reactions         Reaction[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  progressUpdates   ProgressUpdate[]
+  
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("refresh_tokens")
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  accentColor String   @default("#6366f1")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User     @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  
+  members       WorkspaceMember[]
+  goals         Goal[]
+  announcements Announcement[]
+  actionItems   ActionItem[]
+  auditLogs     AuditLog[]
+  invitations   Invitation[]
+  
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        UserRole  @default(MEMBER)
+  isOnline    Boolean   @default(false)
+  lastSeenAt  DateTime  @default(now())
+  joinedAt    DateTime  @default(now())
+  
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  email       String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  role        UserRole  @default(MEMBER)
+  token       String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@map("invitations")
+}
+
+model Goal {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  workspaceId String
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ownerId     String
+  owner       User        @relation("GoalOwner", fields: [ownerId], references: [id])
+  status      GoalStatus  @default(NOT_STARTED)
+  dueDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  milestones      Milestone[]
+  actionItems     ActionItem[]
+  progressUpdates ProgressUpdate[]
+  
+  @@map("goals")
+}
+
+model Milestone {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  goalId          String
+  goal            Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  progressPercent Int      @default(0)
+  dueDate         DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("milestones")
+}
+
+model ProgressUpdate {
+  id        String   @id @default(uuid())
+  content   String
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  
+  @@map("progress_updates")
+}
+
+model ActionItem {
+  id          String             @id @default(uuid())
+  title       String
+  description String?
+  workspaceId String
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  goalId      String?
+  goal        Goal?              @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  assigneeId  String?
+  assignee    User?              @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  status      ActionItemStatus   @default(TODO)
+  priority    ActionItemPriority @default(MEDIUM)
+  dueDate     DateTime?
+  position    Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  @@map("action_items")
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  comments  Comment[]
+  reactions Reaction[]
+  
+  @@map("announcements")
+}
+
+model Comment {
+  id             String        @id @default(uuid())
+  content        String
+  announcementId String
+  announcement   Announcement  @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  parentId       String?
+  parent         Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[]     @relation("CommentReplies")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  @@map("comments")
+}
+
+model Reaction {
+  id             String       @id @default(uuid())
+  emoji          String
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+  
+  @@unique([announcementId, userId, emoji])
+  @@map("reactions")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+  
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String
+  changes     Json?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  
+  @@index([workspaceId, createdAt])
+  @@map("audit_logs")
+}
