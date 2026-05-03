@@ -190,7 +190,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {log.user.avatarUrl && (
+                      {log.user?.avatarUrl && (
                         <img
                           src={log.user.avatarUrl}
                           alt={log.user.firstName}
@@ -199,10 +199,10 @@ export default function AuditLogsPage() {
                       )}
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {log.user.firstName} {log.user.lastName}
+                          {log.user?.firstName} {log.user?.lastName}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {log.user.email}
+                          {log.user?.email}
                         </div>
                       </div>
                     </div>
@@ -213,7 +213,7 @@ export default function AuditLogsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">{log.entityType}</div>
+                    <div className="text-sm text-gray-900 dark:text-white">{log.entity}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">
                       {log.entityId.substring(0, 8)}...
                     </div>

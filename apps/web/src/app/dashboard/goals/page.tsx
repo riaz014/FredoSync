@@ -92,7 +92,7 @@ export default function GoalsPage() {
         title: '',
         description: '',
         ownerId: user?.id || members[0]?.user.id || '',
-        status: 'NOT_STARTED',
+        status: GoalStatus.NOT_STARTED,
         dueDate: '',
       });
       fetchGoals();
