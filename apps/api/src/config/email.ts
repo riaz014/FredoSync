@@ -7,7 +7,7 @@ let transporter: any = null;
 
 const getTransporter = () => {
   if (!transporter) {
-    transporter = nodemailer.createTransporter({
+    transporter = (nodemailer as any).createTransporter({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
       secure: false,

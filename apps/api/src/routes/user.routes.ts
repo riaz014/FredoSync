@@ -41,7 +41,7 @@ const upload = multer({
 // Middleware to handle multer errors
 const handleMulterError = (err: any, req: any, res: any, next: any) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'FILE_TOO_LARGE') {
+    if ((err as any).code === 'FILE_TOO_LARGE') {
       return res.status(400).json({ error: 'File size must be less than 5MB' });
     }
     return res.status(400).json({ error: err.message });

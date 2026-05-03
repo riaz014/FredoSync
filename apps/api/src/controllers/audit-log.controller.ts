@@ -63,7 +63,7 @@ export const exportAuditLogs = async (
       orderBy: { createdAt: 'desc' },
     });
 
-    const rows = logs.map((log) => ({
+    const rows = logs.map((log: any) => ({
       Timestamp: log.createdAt.toISOString(),
       User: `${log.user.firstName} ${log.user.lastName}`,
       Email: log.user.email,
