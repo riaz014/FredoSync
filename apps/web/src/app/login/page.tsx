@@ -10,8 +10,8 @@ import { Briefcase, Mail, Lock, LogIn } from 'lucide-react';
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
-  const [email, setEmail] = useState('demo@fredocloud.com');
-  const [password, setPassword] = useState('Demo123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -98,7 +98,6 @@ export default function LoginPage() {
                   {showPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
               </div>
-              <p className="text-xs text-blue-300/60">Demo: Demo123!</p>
             </div>
 
             {/* Submit Button */}
@@ -132,8 +131,12 @@ export default function LoginPage() {
 
           {/* Demo Info */}
           <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-400/20">
-            <p className="text-xs text-blue-200 text-center">
-              🔐 Use demo credentials to test the application
+            <p className="text-xs text-blue-200 text-center mb-2">
+              🔐 Demo Login Available
+            </p>
+            <p className="text-xs text-blue-300/80 text-center">
+              <strong>Demo Email:</strong> demo@fredocloud.com<br/>
+              <strong>Password:</strong> Demo123!
             </p>
           </div>
         </div>

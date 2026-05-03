@@ -44,12 +44,11 @@ export default function AuditLogsPage() {
       );
       setLogs(response.data);
     } catch (error: any) {
-      if (error.response?.status === 403) {
-        toast.error('You do not have permission to view audit logs');
-        router.push('/dashboard');
-      } else {
+      // Don't show error for 403 (access denied) - just show empty state
+      if (error.response?.status !== 403) {
         toast.error('Failed to fetch audit logs');
       }
+      setLogs([]);
     } finally {
       setIsLoading(false);
     }

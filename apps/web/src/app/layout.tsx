@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import '../styles/globals.css';
 import { Providers } from './providers';
@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: 'Fredo Cloud - Workspace Management',
   description: 'Modern workspace management platform',
   manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
   themeColor: '#6366f1',
 };
 

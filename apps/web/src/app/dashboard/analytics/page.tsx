@@ -40,8 +40,20 @@ export default function AnalyticsPage() {
     try {
       const response = await api.get(`/api/analytics/${currentWorkspace!.id}`);
       setData(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch analytics');
+    } catch (error: any) {
+      // Don't show error for 403 (access denied) - show default data
+      if (error.response?.status !== 403) {
+        toast.error('Failed to fetch analytics');
+      }
+      // Set default empty analytics data
+      setData({
+        totalGoals: 0,
+        completedThisWeek: 0,
+        inProgressGoals: 0,
+        overdueActionItems: 0,
+        weeklyProgress: [],
+        completionRate: 0,
+      });
     } finally {
       setIsLoading(false);
     }

@@ -45,21 +45,52 @@ export const uploadAvatar = async (
   res: Response,
   next: NextFunction
 ) => {
+  let filePath: string | null = null;
   try {
     if (!req.file) {
       throw new AppError('No file uploaded', 400);
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'avatars',
-      transformation: [{ width: 200, height: 200, crop: 'fill' }],
-    });
+    filePath = req.file.path;
+    console.log('Avatar upload - File received:', { filename: req.file.filename, size: req.file.size });
 
-    fs.unlinkSync(req.file.path);
+    let avatarUrl: string;
+
+    // Try to upload to Cloudinary if configured
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      try {
+        console.log('Uploading to Cloudinary...');
+        const result = await cloudinary.uploader.upload(filePath, {
+          folder: 'avatars',
+          public_id: `avatar-${req.user!.id}`,
+          overwrite: true,
+          resource_type: 'auto',
+        });
+
+        avatarUrl = result.secure_url;
+        console.log('Cloudinary upload successful:', avatarUrl);
+      } catch (cloudinaryError: any) {
+        console.warn('Cloudinary upload failed, using fallback:', cloudinaryError.message);
+        // Fallback to DiceBear if Cloudinary fails
+        avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.user!.id}-${Date.now()}`;
+      }
+    } else {
+      console.log('Cloudinary not configured, using DiceBear fallback');
+      // Use DiceBear avatar service as fallback (free, no auth needed)
+      avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.user!.id}-${Date.now()}`;
+    }
+
+    // Delete local file after successful upload
+    try {
+      fs.unlinkSync(filePath);
+      console.log('Temp file deleted');
+    } catch (unlinkError) {
+      console.error('Error deleting temp file:', unlinkError);
+    }
 
     const user = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { avatarUrl: result.secure_url },
+      data: { avatarUrl },
       select: {
         id: true,
         email: true,
@@ -71,10 +102,17 @@ export const uploadAvatar = async (
       },
     });
 
+    console.log('User updated with new avatar');
     res.json(user);
-  } catch (error) {
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
+  } catch (error: any) {
+    console.error('Avatar upload error:', error.message || error);
+    // Clean up local file on error
+    if (filePath) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (unlinkError) {
+        console.error('Error deleting temp file on error:', unlinkError);
+      }
     }
     next(error);
   }

@@ -71,6 +71,20 @@ export const register = async (
       },
     });
 
+    // Create a default workspace for the new user
+    await prisma.workspace.create({
+      data: {
+        name: `${data.firstName}'s Workspace`,
+        description: 'Your personal workspace to organize goals and tasks',
+        members: {
+          create: {
+            userId: user.id,
+            role: 'ADMIN',
+          },
+        },
+      },
+    });
+
     const { accessToken, refreshToken } = generateTokens(user.id, user.email);
 
     await prisma.refreshToken.create({

@@ -54,9 +54,12 @@ export default function MembersPage() {
     try {
       const response = await api.get(`/api/workspaces/${currentWorkspace?.id}/members`);
       setMembers(response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch members:', error);
-      toast.error('Failed to load members');
+    } catch (error: any) {
+      // Don't show error for 403 (access denied) - just show empty state
+      if (error.response?.status !== 403) {
+        toast.error('Failed to load members');
+      }
+      setMembers([]);
     } finally {
       setIsLoading(false);
     }

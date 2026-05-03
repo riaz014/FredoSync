@@ -10,30 +10,75 @@ import toast from 'react-hot-toast';
 
 export default function WorkspacesPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, isLoading } = useAuthStore();
   const { setCurrentWorkspace, setWorkspaces } = useWorkspaceStore();
   const [workspacesList, setWorkspacesList] = useState<Workspace[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+  });
 
   useEffect(() => {
+    // Wait for auth to be checked before proceeding
+    if (isLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
     fetchWorkspaces();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, isLoading]);
 
   const fetchWorkspaces = async () => {
     try {
       const response = await api.get('/api/workspaces');
       setWorkspacesList(response.data || []);
       setWorkspaces(response.data || []);
-      setIsLoading(false);
+      setIsLoadingWorkspaces(false);
     } catch (error) {
       console.error('Failed to fetch workspaces:', error);
       toast.error('Failed to load workspaces');
-      setIsLoading(false);
+      setIsLoadingWorkspaces(false);
+    }
+  };
+
+  const handleCreateWorkspace = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast.error('Workspace name is required');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await api.post('/api/workspaces', {
+        name: formData.name,
+        description: formData.description,
+      });
+
+      toast.success('Workspace created successfully!');
+      setShowCreateModal(false);
+      setFormData({ name: '', description: '' });
+      
+      // Add new workspace to list
+      const updatedWorkspaces = [...workspacesList, response.data];
+      setWorkspacesList(updatedWorkspaces);
+      setWorkspaces(updatedWorkspaces);
+      
+      // Switch to new workspace
+      setCurrentWorkspace(response.data);
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to create workspace');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -47,7 +92,7 @@ export default function WorkspacesPage() {
     router.push('/login');
   };
 
-  if (isLoading) {
+  if (isLoadingWorkspaces) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <div className="text-center">
@@ -192,7 +237,7 @@ export default function WorkspacesPage() {
             {/* Create new workspace CTA */}
             <div className="flex justify-center">
               <button
-                onClick={() => toast.success('Create workspace feature coming soon')}
+                onClick={() => setShowCreateModal(true)}
                 className="group flex items-center gap-3 px-8 py-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-2 border-dashed border-blue-400/50 hover:border-blue-400 hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-blue-600/20 text-blue-300 font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
               >
                 <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
@@ -200,6 +245,61 @@ export default function WorkspacesPage() {
               </button>
             </div>
           </>
+        )}
+
+        {/* Create Workspace Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-blue-500/30 rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in fade-in zoom-in-95 duration-300">
+              <h2 className="text-2xl font-bold text-white mb-6">Create New Workspace</h2>
+              
+              <form onSubmit={handleCreateWorkspace} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-blue-200 mb-2">
+                    Workspace Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Marketing Team"
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-blue-400/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-blue-200 mb-2">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe your workspace..."
+                    rows={3}
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-blue-400/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-blue-300 font-medium rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreating ? 'Creating...' : 'Create'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
       </div>
 

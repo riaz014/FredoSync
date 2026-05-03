@@ -27,8 +27,12 @@ export default function AnnouncementsPage() {
     try {
       const response = await api.get(`/api/announcements/workspace/${currentWorkspace!.id}`);
       setAnnouncements(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch announcements');
+    } catch (error: any) {
+      // Don't show error for 403 (access denied) - just show empty state
+      if (error.response?.status !== 403) {
+        toast.error('Failed to fetch announcements');
+      }
+      setAnnouncements([]);
     } finally {
       setIsLoading(false);
     }
