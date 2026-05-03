@@ -16,11 +16,10 @@ npm run build:packages
 echo "3️⃣  Building backend application..."
 npm run build --prefix apps/api
 
-# Run Prisma migrations
-echo "4️⃣  Running database migrations..."
+# Generate Prisma client (migrations will run at deploy time)
+echo "4️⃣  Generating Prisma client..."
 cd apps/api
 npx prisma generate
-npx prisma migrate deploy
 cd ../..
 
 echo "✅ Backend build complete!"
