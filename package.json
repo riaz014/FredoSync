@@ -15,8 +15,10 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "install:all": "npm ci && npm ci --prefix apps/api && npm ci --prefix apps/web",
-    "build:backend": "npm ci && npm ci --prefix apps/api && npm run build --prefix apps/api",
-    "build:frontend": "npm ci && npm ci --prefix apps/web && npm run build --prefix apps/web"
+    "postinstall": "npm run build:packages",
+    "build:packages": "npm run build --prefix packages/types --if-present && npm run build --prefix packages/database --if-present && npm run build --prefix packages/config --if-present",
+    "build:backend": "npm install && npm run build:packages && npm run build --prefix apps/api",
+    "build:frontend": "npm install && npm run build:packages && npm run build --prefix apps/web"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

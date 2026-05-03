@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "📦 Building Backend Service..."
+echo "📦 Building Frontend Service..."
 echo "================================"
 
 # Install dependencies from monorepo root
@@ -12,9 +12,8 @@ npm install
 echo "2️⃣  Building local packages..."
 npm run build:packages
 
-# Build backend
-echo "3️⃣  Building backend application..."
-npm run build --prefix apps/api
+# Build frontend
+echo "3️⃣  Building frontend application..."
+npm run build --prefix apps/web
 
-echo "✅ Backend build complete!"
-
+echo "✅ Frontend build complete!"
