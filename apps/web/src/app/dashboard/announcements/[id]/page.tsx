@@ -202,10 +202,10 @@ export default function AnnouncementDetailPage() {
     return <div className="flex items-center justify-center h-full">Announcement not found</div>;
   }
 
-  const reactionCounts = announcement.reactions?.reduce((acc: any, reaction) => {
+  const reactionCounts = announcement.reactions?.reduce((acc: Record<string, number>, reaction) => {
     acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
     return acc;
-  }, {});
+  }, {} as Record<string, number>);
 
   const userReactions = announcement.reactions?.filter((r) => r.userId === user?.id) || [];
 
